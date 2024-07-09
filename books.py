@@ -1,6 +1,5 @@
 from fastapi import FastAPI, HTTPException,Depends,status
 from pydantic import BaseModel
-from uuid import UUID
 from typing import Annotated
 from database import engine, SessionLocal
 import model
@@ -33,8 +32,18 @@ async def create_book(book:BookBase, db: db_dependency):
     db.add(db_book)
     db.commit()
 
+@app.get("/books/{book_id}", status_code= status.HTTP_200_OK)
+async def read_books(book_id: int, db:db_dependency):
+    book = db.query(model.Book).filter(model.Book.id==book_id).first()
+    if book is None:
+        raise HTTPException(status_code=404, detail= "Book not found")
+    return book
 
-
+@app.delete("/books/{book_id}", status_code=status.HTTP_200_OK)
+async def delete_book(book_id:int, db:db_dependency):
+    book=db.query(model.Book).filter(model.Book.id==book_id).first()
+    db.delete(book)
+    db.commit()
 
 # BOOKS= []
 

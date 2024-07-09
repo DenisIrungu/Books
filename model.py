@@ -3,8 +3,13 @@ from database import Base
 
 class Book(Base):
     __tablename__= "books"
-    id= Column(Integer, primary_key= True, index=True)
+    id = Column(Integer, primary_key= True, index=True)
     title=Column(String (50))
     author= Column(String(50))
     description= Column(String(50))
     rating= Column(Float)
+# class User(Base):
+#     __tablename__="users"
+#     id= Column(Integer, primary_key= True, index=True)
+#     user_name=Column(String (50))
+#     description= Column(String(50))
