@@ -1,52 +1,74 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
+from fastapi import FastAPI, HTTPException,Depends,status
+from pydantic import BaseModel
 from uuid import UUID
+from typing import Annotated
+from database import engine, SessionLocal
+import model
+from sqlalchemy.orm import session
 
 
 app = FastAPI()
 
-class Book(BaseModel):
-    id: UUID
-    title: str =Field(min_length=1)
-    author: str =Field (min_length=1, max_length=100)
-    description: str =Field (min_length=1, max_length=100)
-    rating: int =Field(gt=-1, lt=101)
+model.Base.metadata.create_all(bind=engine)
 
-BOOKS= []
 
-    
+class BookBase(BaseModel):
+    id: int
+    title: str 
+    author: str 
+    description: str 
+    rating: int 
 
-@app. get("/")
-async def read_api():
-    return BOOKS
+def get_db():
+    db=SessionLocal ()
+    try:
+        yield db
+    finally:
+        db.close()
+db_dependency=Annotated[session, Depends(get_db)]
 
-@app.post("/")
-async def create_book(book:Book):
-    BOOKS.append(book)
-    return book
+@app.post("/books/")
+async def create_book(book:BookBase, db: db_dependency):
+    db_book= model.Book(**book.dict())
+    db.add(db_book)
+    db.commit()
 
-@app.put("/{book_id}")
-async def update_book(book_id:UUID, book: Book):
-    counter = 0
-    for x in BOOKS:
-        counter+=1
-        if x.id == book_id:
-            BOOKS[counter-1]=book
-        return BOOKS[counter-1]
-    raise HTTPException(
-        status_code= 404,
-        detail= f"ID {book_id}: Does no exist")
 
-@app.delete("/{book_id}")
-async def delete_book(book_id: UUID):
-    counter = 0
-    for x in BOOKS:
-        counter +=1
-        if x.id==book_id:
-            del BOOKS[counter-1]
-            return f"ID:{book_id} deleted"
-    raise HTTPException(status_code=404, 
-                            detail= f"ID {book_id}: Does not exist")
+
+
+# BOOKS= []
+
+# @app. get("/")
+# async def read_api():
+#     return BOOKS
+
+# @app.post("/")
+# async def create_book(book:Book):
+#     BOOKS.append(book)
+#     return book
+
+# @app.put("/{book_id}")
+# async def update_book(book_id:UUID, book: Book):
+#     counter = 0
+#     for x in BOOKS:
+#         counter+=1
+#         if x.id == book_id:
+#             BOOKS[counter-1]=book
+#         return BOOKS[counter-1]
+#     raise HTTPException(
+#         status_code= 404,
+#         detail= f"ID {book_id}: Does no exist")
+
+# @app.delete("/{book_id}")
+# async def delete_book(book_id: UUID):
+#     counter = 0
+#     for x in BOOKS:
+#         counter +=1
+#         if x.id==book_id:
+#             del BOOKS[counter-1]
+#             return f"ID:{book_id} deleted"
+#     raise HTTPException(status_code=404, 
+#                             detail= f"ID {book_id}: Does not exist")
     
 
 
